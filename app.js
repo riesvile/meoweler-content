@@ -286,11 +286,13 @@ async function store_city_data(store_this, content_type, city, city_id){
 	// `doc` is the document _after_ `update` was applied because of
 	// `new: true`
 
-	const doc = await City.findOneAndUpdate(filter, update, {
-	 new: true,
-	 upsert: false
-	});
-	console.log('db updated');
+	if (mong) {
+		const doc = await City.findOneAndUpdate(filter, update, {
+		 new: true,
+		 upsert: false
+		});
+		console.log('db updated');
+	}
 
 }
 
