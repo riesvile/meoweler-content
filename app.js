@@ -63,10 +63,6 @@ function batch_cities(c, from = 0, to = 1){
 		}
 
 		batches['b' + j].push([city.city_ascii, city.country, "c" + city.id]);
-		// prestore_city(city.city, city.city_ascii, "c" + city.id, city.population);
-		// if (temp_countries.indexOf(city.country) === -1) temp_countries.push(city.country);
-
-		
 
 	}
 	let final_array = [];
@@ -76,8 +72,6 @@ function batch_cities(c, from = 0, to = 1){
 			final_array.push(batches[b]);	
 		} 
 	}
-	//console.log("batches")
-	//console.log(batches);
 	return final_array;
 }
 
@@ -96,16 +90,13 @@ function process_prompt(str, content_type = '', city = '', city_id = ''){
 		body: JSON.stringify(
 			{
 			  "model": "gpt-3.5-turbo",
-			  //"n": 5,
 			  "messages": [{"role": "user", "content": str}]
 			}
 		)
 	}).then(response => {
 		return response.json();
 	}).then(data => {
-		//console.log(data.choices);
 		let rec = data.choices[0].message.content;
-		//console.log(JSON.parse(JSON.stringify(rec)));
 		let result = "{ data: 'nada'}";
 		let tried_again = 0;
 		let failed = 0;
@@ -140,8 +131,6 @@ function populate_database(){
 			console.log('parsed:');
 			console.log(parsed);
 			for (let item in parsed){
-				//console.log('item: ' + item);
-				//console.log(temp_countries);
 				new_country(item, parsed[item][0], parsed[item][1], temp_countries[item]['cities'])
 			}
 		}
@@ -183,23 +172,16 @@ function calculate_meowscore(data){
 	let score = 0;
 
 	for (let key in data){
-		//console.log('meow:')
-		//console.log(data[key][0])
 		score += data[key][0] * weights[key];
 	}
 
 	score = Math.round(convert_range(score, [120, 400], [0, 100]));
-	//console.log('score: ' + score);
 	return score;
 }
 
 async function store_city_data(store_this, content_type, city, city_id){
-	// console.log('storing ' + content_type);
-	// console.log(store_this);
-	// console.log('into ' + city);
 
 	const filter = { id: city_id };
-	//const update = { age: 59 };
 	let update = {};
 
 	if (store_this['data'] != undefined && store_this['data'] == 'nada') return;
@@ -280,12 +262,7 @@ async function store_city_data(store_this, content_type, city, city_id){
 			console.log('storing unknown');
 	}
 
-	// console.log('updating:');
 	console.log(update);
-
-	// `doc` is the document _after_ `update` was applied because of
-	// `new: true`
-
 	if (mong) {
 		const doc = await City.findOneAndUpdate(filter, update, {
 		 new: true,
@@ -522,25 +499,6 @@ function process_batch(cities_batch){
 
 
 function generate_city_content(city, country = '', city_id = ''){
-	// blocks:
-	// tagline
-	// summary
-	// month visit
-	// visit duration
-	// tipping
-	// internet
-	// socket type
-	// currency
-	// time
-	// bike
-	// walk
-	// lgbtq
-	// things to do (mainstream + gems)
-	// mindful meoweler
-	// songs
-	// useful websites
-	// meow score!
-
 	gen_tagline(city, 'tagline', country, city_id)
 	gen_summary(city, 'summary', country, city_id);
 	gen_month_feel(city, 'month', country, city_id);
@@ -560,33 +518,13 @@ function generate_city_content(city, country = '', city_id = ''){
 	processed_count++;
 }
 
-let arr = ['Prague', 'Berlin', 'Pardubice', 'Zurich', 'Olomouc', 'Rome', 'San Francisco', 'barf'];
-// gen_batch_tagline(arr);
-// gen_batch_summary(arr);
-// gen_batch_visit_duration(arr);
-
-// generate_city_content('Prague');
-
-
-
-
-//gen_internet('Cairo', 'Egypt');
-
-//new_country('heheaa');
-
-//console.log(temp_countries);
-//console.log(batches_countries);
-
-
-//process_prompt('Say this is a test', 'test', 'prague', '843794');
 
 app.get('/batch/:batch_num', (req, res) => {
 	
 	let batch_range = req.params.batch_num;
 	let batch_from = batch_range.split('-')[0];
 	let batch_to = batch_range.split('-')[1];
-	//console.log('batch_num:' + batch_num);
-	// res.sendFile(__dirname + '/batch.html');
+	
 	res.setHeader('Content-Type', 'text/plain');
   	res.end('Processing batch ' + batch_from + ' to ' + batch_to);
 
@@ -595,11 +533,202 @@ app.get('/batch/:batch_num', (req, res) => {
 
 });
 
+app.get('/mj/:batch_num', (req, res) => {
+	
+	let batch_range = req.params.batch_num;
+	let batch_from = batch_range.split('-')[0];
+	let batch_to = batch_range.split('-')[1];
+
+  	let batch = batch_cities(citarr, batch_from, batch_to);
+	//process_batch(batch);
+
+	let mj_prompt = ", sunny day, very vibrant colors, lots of white space, cats, stylish vector realism with surreal elements, vector, landmark view, dynamic composition --ar 19:10 --v 5.1";
+	let mj_prompt2 = ", atmospheric day, very vibrant colors, lots of white space, cats, stylish vector hyperrealism with surreal elements, landmark view, dynamic composition --ar 19:10 --v 5.1"
+
+	let prompt_array = [];
+	let processed = "";
+	let helpc = 0;
+	let complete_prompt = "";
+
+	let mj_pre = "{ ";
+	for (let i of batch){
+		for (j of i){
+			let mj_city = j[0];
+			let mj_country = j[1];
+			if (helpc == 0) {
+				mj_pre += mj_city + " - " + mj_country;
+				first = 0;
+			} else {
+				mj_pre += ", " + mj_city + " - " + mj_country;
+			}
+			helpc++;
+			if (helpc >= 39){
+				complete_prompt = mj_pre + " }" + mj_prompt2;
+				prompt_array.push(complete_prompt);
+				helpc = 0;
+				complete_prompt = '';
+				mj_pre = '{ '
+			}
+		}
+
+	}
+
+	for (item of prompt_array){
+		console.log(item + "\n\n\n");
+	}
+
+	res.setHeader('Content-Type', 'text/plain');
+ 	res.end('Processing batch ' + batch_from + ' to ' + batch_to + "\n\n\n" + processed);
+
+});
+
+
 app.get('/city/:city_name', (req, res) => {
 	let city = req.params.city_name;
 	res.setHeader('Content-Type', 'text/plain');
   	res.end('Generating content for ' + city);
-  	generate_city_content(city);
+  	generate_city_content(city, "Switzerland", "c1756810813");
+});
+
+app.get('/test', (req, res) => {
+	res.setHeader('Content-Type', 'text/plain');
+	res.end(JSON.stringify(big_mac_index));
+})
+
+
+app.get('/json/:populationrange', (req, res) => {
+
+	let range = req.params.populationrange;
+	let p_from = range.split('-')[0];
+	let p_to = range.split('-')[1];
+	let howmany = 10000;
+
+	let city_json = [];
+	let counter = 0;
+
+
+		City.find({ population: { $lt: p_to, $gt: (p_from - 1) }})
+		.then(function (cities) {
+		  cities.forEach(function(city) {
+	    	if (counter < howmany){
+	      	city_json.push(city);
+	      	counter++;
+	      	console.log(counter);
+	    	} else {
+	    		console.log('p');
+	    	}
+	    });
+
+	    	res.setHeader('Content-Type', 'text/plain');
+			res.send(JSON.stringify(city_json));
+		})
+		.catch(function (err) {
+		  console.log(err);
+		});
+
+})
+
+app.get('/jsoncountries', (req, res) => {
+
+	let howmany = 1000;
+
+	let country_json = [];
+	let counter = 0;
+
+		Country.find({})
+		.then(function (countries) {
+		  countries.forEach(function(country) {
+	    	if (counter < howmany){
+	      	country_json.push(country);
+	      	counter++;
+	      	console.log(counter);
+	    	} else {
+	    		console.log('p');
+	    	}
+	    });
+
+	    res.setHeader('Content-Type', 'text/plain');
+			res.send(JSON.stringify(country_json));
+
+		})
+		.catch(function (err) {
+		  console.log(err);
+		});
+
+})
+
+app.get('/meowscore', (req, res) => {
+
+	let p_from = 98;
+	let p_to = 140;
+	let howmany = 100;
+
+	let city_json = [];
+	let counter = 0;
+
+		City.find({ meowscore: { $lt: p_to, $gt: p_from }})
+		.then(function (cities) {
+		  cities.forEach(function(city) {
+	    	if (counter < howmany){
+	      	city_json.push([city.name, city.country, city.population, city.meowscore]);
+	      	counter++;
+	      	console.log(counter);
+	    	} else {
+	    		console.log('p');
+	    	}
+	    });
+
+	    res.setHeader('Content-Type', 'text/plain');
+			res.send(JSON.stringify(city_json));
+
+
+
+
+		})
+		.catch(function (err) {
+		  console.log(err);
+		});
+
+})
+
+
+app.get('/autobatch/:batch_num', (req, res) => {
+	
+	let batch_from = req.params.batch_num;
+	let current_batch = Number(batch_from);
+
+	let b = 0;
+
+	let batch0 = batch_cities(citarr, current_batch, (current_batch + 1));
+		process_batch(batch0);
+		console.log('==================================')
+		console.log('==================================')
+		console.log('currently processing: ' + current_batch)
+		console.log('==================================')
+		console.log('==================================')
+
+		current_batch += 2;
+
+	setInterval(() => {
+
+	  let batch = batch_cities(citarr, current_batch, (current_batch + 1));
+		process_batch(batch);
+		console.log('==================================')
+		console.log('==================================')
+		console.log('currently processing: ' + current_batch)
+		console.log('==================================')
+		console.log('==================================')
+
+		current_batch += 2;
+
+	}, "300000");
+
+  	
+
+
+	res.setHeader('Content-Type', 'text/plain');
+  	res.end('Processing batches from ' + batch_from);
+
 });
 
 
